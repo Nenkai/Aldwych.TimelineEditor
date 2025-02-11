@@ -1,196 +1,194 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-namespace Aldwych.TimelineEditor
+namespace Aldwych.TimelineEditor;
+
+public class TimelineGrid : Control
 {
-    public class TimelineGrid : Control
+    public static readonly StyledProperty<IBrush> BackgroundProperty = AvaloniaProperty.Register<TimelineGrid, IBrush>(nameof(Background), Brushes.Gray);
+    public static readonly StyledProperty<IBrush> VerticalLineBrushProperty = AvaloniaProperty.Register<TimelineGrid, IBrush>(nameof(VerticalLineBrush), Brushes.Gray);
+    public static readonly StyledProperty<IBrush> HorizontalLineBrushProperty = AvaloniaProperty.Register<TimelineGrid, IBrush>(nameof(HorizontalLineBrush), Brushes.Gray);
+
+    public static readonly StyledProperty<double> TrackHeightProperty = AvaloniaProperty.Register<TimelineGrid, double>(nameof(TrackHeight), 25d);
+    public static readonly StyledProperty<double> HorizontalLineThicknessProperty = AvaloniaProperty.Register<TimelineGrid, double>(nameof(HorizontalLineThickness), 2d);
+    public static readonly StyledProperty<double> VerticalLineThicknessProperty = AvaloniaProperty.Register<TimelineGrid, double>(nameof(VerticalLineThickness), 1d);
+
+
+    public override void Render(DrawingContext context)
     {
-        public static readonly StyledProperty<IBrush> BackgroundProperty = AvaloniaProperty.Register<TimelineGrid, IBrush>(nameof(Background), Brushes.Gray);
-        public static readonly StyledProperty<IBrush> VerticalLineBrushProperty = AvaloniaProperty.Register<TimelineGrid, IBrush>(nameof(VerticalLineBrush), Brushes.Gray);
-        public static readonly StyledProperty<IBrush> HorizontalLineBrushProperty = AvaloniaProperty.Register<TimelineGrid, IBrush>(nameof(HorizontalLineBrush), Brushes.Gray);
+        base.Render(context);
+        context.FillRectangle(new SolidColorBrush(Color.FromRgb(24, 24, 24)), this.Bounds);
 
-        public static readonly StyledProperty<double> TrackHeightProperty = AvaloniaProperty.Register<TimelineGrid, double>(nameof(TrackHeight), 25d);
-        public static readonly StyledProperty<double> HorizontalLineThicknessProperty = AvaloniaProperty.Register<TimelineGrid, double>(nameof(HorizontalLineThickness), 2d);
-        public static readonly StyledProperty<double> VerticalLineThicknessProperty = AvaloniaProperty.Register<TimelineGrid, double>(nameof(VerticalLineThickness), 1d);
+        DrawMinorLines(context);
+        DrawMajorLines(context);
+        DrawRowLines(context);         
+    }
 
+    protected virtual void DrawMinorLines(DrawingContext context)
+    {
+        double firstTickPosition = 0;
+        var h = this.Bounds.Height;
 
-
-        public override void Render(DrawingContext context)
+        var minorPen = new Pen(VerticalLineBrush, VerticalLineThickness / 2, DashStyle.Dash);
+        if (minorPen != null)
         {
-            base.Render(context);
-            context.FillRectangle(new SolidColorBrush(Color.FromRgb(24, 24, 24)), this.Bounds);
 
-            DrawMinorLines(context);
-            DrawMajorLines(context);
-            DrawRowLines(context);         
-        }
-
-        protected virtual void DrawMinorLines(DrawingContext context)
-        {
-            double firstTickPosition = 0;
-            var h = this.Bounds.Height;
-
-            var minorPen = new Pen(VerticalLineBrush, VerticalLineThickness / 2, DashStyle.Dash);
-            if (minorPen != null)
+            for (double i = 0; i < this.markerCount * this.TicksPerInterval; i++)
             {
+                var x = firstTickPosition + i * this.TickSpacing;
 
-                for (double i = 0; i < this.markerCount * this.TicksPerInterval; i++)
-                {
-                    var x = firstTickPosition + i * this.TickSpacing;
+                var firstPoint = new Point(x, 0);
+                var secondPoint = new Point(x, h);
 
-                    var firstPoint = new Point(x, 0);
-                    var secondPoint = new Point(x, h);
-
-                    context.DrawLine(minorPen, firstPoint, secondPoint);
-                }
+                context.DrawLine(minorPen, firstPoint, secondPoint);
             }
         }
+    }
 
-        protected virtual void DrawMajorLines(DrawingContext context)
+    protected virtual void DrawMajorLines(DrawingContext context)
+    {
+        double firstTickPosition = 0;
+        var h = this.Bounds.Height;
+
+        var majorPen = new Pen(VerticalLineBrush, VerticalLineThickness);
+        if (majorPen != null)
         {
-            double firstTickPosition = 0;
-            var h = this.Bounds.Height;
 
-            var majorPen = new Pen(VerticalLineBrush, VerticalLineThickness);
-            if (majorPen != null)
+            for (double i = 0; i < this.markerCount * this.TicksPerInterval; i++)
             {
+                var x = firstTickPosition + i * MarkerSpacing;
 
-                for (double i = 0; i < this.markerCount * this.TicksPerInterval; i++)
-                {
-                    var x = firstTickPosition + i * MarkerSpacing;
+                var firstPoint = new Point(x, 0);
+                var secondPoint = new Point(x, h);
 
-                    var firstPoint = new Point(x, 0);
-                    var secondPoint = new Point(x, h);
-
-                    context.DrawLine(majorPen, firstPoint, secondPoint);
-                }
+                context.DrawLine(majorPen, firstPoint, secondPoint);
             }
         }
+    }
 
-        protected virtual void DrawRowLines(DrawingContext context)
+    protected virtual void DrawRowLines(DrawingContext context)
+    {
+        var rowCount = this.Bounds.Height / TrackHeight;
+
+        var majorPen = new Pen(HorizontalLineBrush, HorizontalLineThickness);
+        for (int i = 0; i < rowCount; i++)
         {
-            var rowCount = this.Bounds.Height / TrackHeight;
-
-            var majorPen = new Pen(HorizontalLineBrush, HorizontalLineThickness);
-            for (int i = 0; i < rowCount; i++)
-            {
-                var y = TrackHeight * i;
-                var p1 = new Point(0, y);
-                var p2 = new Point(Bounds.Width, y);
-                context.DrawLine(majorPen, p1, p2);
-            }
+            var y = TrackHeight * i;
+            var p1 = new Point(0, y);
+            var p2 = new Point(Bounds.Width, y);
+            context.DrawLine(majorPen, p1, p2);
         }
+    }
 
 
-        double markerSpacing;
-        public double MarkerSpacing
+    double markerSpacing;
+    public double MarkerSpacing
+    {
+        get => markerSpacing;
+        set
         {
-            get => markerSpacing;
-            set
-            {
-                markerSpacing = value;
-                InvalidateVisual();
-            }
+            markerSpacing = value;
+            InvalidateVisual();
         }
+    }
 
 
 
-        int markerCount;
-        public int MarkerCount
+    int markerCount;
+    public int MarkerCount
+    {
+        get => markerCount;
+        set
         {
-            get => markerCount;
-            set
-            {
-                markerCount = value;
-                InvalidateVisual();
-            }
+            markerCount = value;
+            InvalidateVisual();
         }
+    }
 
-        double ticksPerInterval;
-        public double TicksPerInterval
+    double ticksPerInterval;
+    public double TicksPerInterval
+    {
+        get => ticksPerInterval;
+        set
         {
-            get => ticksPerInterval;
-            set
-            {
-                ticksPerInterval = value;
-                InvalidateVisual();
-            }
+            ticksPerInterval = value;
+            InvalidateVisual();
         }
+    }
 
-        public IBrush Background
+    public IBrush Background
+    {
+        get { return this.GetValue(TimelineGrid.BackgroundProperty); }
+        set
         {
-            get { return this.GetValue(TimelineGrid.BackgroundProperty); }
-            set
-            {
-                this.SetValue(TimelineGrid.BackgroundProperty, value);
-                InvalidateVisual();
-            }
+            this.SetValue(TimelineGrid.BackgroundProperty, value);
+            InvalidateVisual();
         }
+    }
 
 
-        public IBrush VerticalLineBrush
+    public IBrush VerticalLineBrush
+    {
+        get { return this.GetValue(TimelineGrid.VerticalLineBrushProperty); }
+        set
         {
-            get { return this.GetValue(TimelineGrid.VerticalLineBrushProperty); }
-            set
-            {
-                this.SetValue(TimelineGrid.VerticalLineBrushProperty, value);
-                InvalidateVisual();
-            }
+            this.SetValue(TimelineGrid.VerticalLineBrushProperty, value);
+            InvalidateVisual();
         }
+    }
 
 
-        public double VerticalLineThickness
+    public double VerticalLineThickness
+    {
+        get { return this.GetValue(TimelineGrid.VerticalLineThicknessProperty); }
+        set
         {
-            get { return this.GetValue(TimelineGrid.VerticalLineThicknessProperty); }
-            set
-            {
-                this.SetValue(TimelineGrid.VerticalLineThicknessProperty, value);
-                InvalidateVisual();
-            }
+            this.SetValue(TimelineGrid.VerticalLineThicknessProperty, value);
+            InvalidateVisual();
         }
+    }
 
 
-        public IBrush HorizontalLineBrush
+    public IBrush HorizontalLineBrush
+    {
+        get { return this.GetValue(TimelineGrid.HorizontalLineBrushProperty); }
+        set
         {
-            get { return this.GetValue(TimelineGrid.HorizontalLineBrushProperty); }
-            set
-            {
-                this.SetValue(TimelineGrid.HorizontalLineBrushProperty, value);
-                InvalidateVisual();
-            }
+            this.SetValue(TimelineGrid.HorizontalLineBrushProperty, value);
+            InvalidateVisual();
         }
+    }
 
-        public double HorizontalLineThickness
+    public double HorizontalLineThickness
+    {
+        get { return this.GetValue(TimelineGrid.HorizontalLineThicknessProperty); }
+        set
         {
-            get { return this.GetValue(TimelineGrid.HorizontalLineThicknessProperty); }
-            set
-            {
-                this.SetValue(TimelineGrid.HorizontalLineThicknessProperty, value);
-                InvalidateVisual();
-            }
+            this.SetValue(TimelineGrid.HorizontalLineThicknessProperty, value);
+            InvalidateVisual();
         }
+    }
 
 
-        public double TrackHeight
+    public double TrackHeight
+    {
+        get { return this.GetValue(TimelineGrid.TrackHeightProperty); }
+        set
         {
-            get { return this.GetValue(TimelineGrid.TrackHeightProperty); }
-            set
-            {
-                this.SetValue(TimelineGrid.TrackHeightProperty, value);
-                InvalidateVisual();
-            }
+            this.SetValue(TimelineGrid.TrackHeightProperty, value);
+            InvalidateVisual();
         }
+    }
 
 
-        double tickSpacing;
-        public double TickSpacing
+    double tickSpacing;
+    public double TickSpacing
+    {
+        get => tickSpacing;
+        set
         {
-            get => tickSpacing;
-            set
-            {
-                tickSpacing = value;
-                InvalidateVisual();
-            }
+            tickSpacing = value;
+            InvalidateVisual();
         }
     }
 }
